@@ -1,7 +1,8 @@
-package service
+package Service
 
 import (
 	"errors"
+	"time"
 
 	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Model"
 	repository "github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Repository"
@@ -63,4 +64,24 @@ func validarProducto(product Model.Product) error {
 		return errors.New("el stock no puede ser negativo")
 	}
 	return nil
+}
+
+func (s *ProductService) ObtenerHistorialProducto(id int, startDate string, endDate string) ([]*Model.ProductHistory, error) {
+
+	if startDate == "" || endDate == "" {
+		return nil, errors.New("las fechas de inicio y fin son requeridas")
+	}
+
+	startDateParsed, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		return nil, errors.New("el formato de la fecha de inicio es inválido")
+	}
+	endDateParsed, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		return nil, errors.New("el formato de la fecha de fin es inválido")
+	}
+	adjustedEndDate := endDateParsed.AddDate(0, 0, 1)
+
+	return s.repo.GetProductHistory(id, startDateParsed, adjustedEndDate)
+
 }

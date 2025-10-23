@@ -1,4 +1,4 @@
-package handler
+package Handler
 
 import (
 	"encoding/json"
@@ -105,4 +105,26 @@ func (p *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (p *ProductHandler) GetProductHistory(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		http.Error(w, "ID invalido", http.StatusBadRequest)
+		return
+	}
+
+	queryParams := r.URL.Query()
+	startDate := queryParams.Get("start")
+	endDate := queryParams.Get("end")
+
+	history, err := p.service.ObtenerHistorialProducto(id, startDate, endDate)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(history)
 }

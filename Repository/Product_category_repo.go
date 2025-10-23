@@ -1,4 +1,4 @@
-package repository
+package Repository
 
 import "github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Model"
 

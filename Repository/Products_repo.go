@@ -1,4 +1,4 @@
-package repository
+package Repository
 
 import (
 	"database/sql"
@@ -14,6 +14,7 @@ type ProductRepository interface {
 	UpdateProduct(id int, product *Model.Product) (*Model.Product, error)
 	DeleteProduct(id int) error
 	GetAllProducts() ([]*Model.Product, error)
+	GetProductHistory(id int, startDate time.Time, endDate time.Time) ([]*Model.ProductHistory, error)
 }
 
 type productRepository struct {
@@ -34,6 +35,10 @@ func (p *productRepository) CreateProduct(product *Model.Product) (*Model.Produc
 	product.ID = int(id)
 	product.CreatedAt = time.Now()
 	product.UpdatedAt = time.Now()
+
+	// Crear un registro en la tabla de historial de productos
+	createProductHistory(product, p)
+
 	return product, nil
 }
 
@@ -69,28 +74,57 @@ func (p *productRepository) GetAllProducts() ([]*Model.Product, error) {
 }
 
 func (p *productRepository) UpdateProduct(id int, product *Model.Product) (*Model.Product, error) {
-	query := `UPDATE products SET name = $1, description = $2, price = $3, stock = $4, updated_at = $5 WHERE id = $6`
+	query := `UPDATE products SET name = $1, description = $2, price = $3, stock = $4, updated_at = $5 WHERE id = $6 RETURNING *`
 
-	result, err := p.db.Exec(query, product.Name, product.Description, product.Price, product.Stock, time.Now(), id)
+	var updatedProduct Model.Product
+	row := p.db.QueryRow(query, product.Name, product.Description, product.Price, product.Stock, time.Now(), id)
+
+	err := row.Scan(&updatedProduct.ID, &updatedProduct.Name, &updatedProduct.Description, &updatedProduct.Price, &updatedProduct.Stock, &updatedProduct.CreatedAt, &updatedProduct.UpdatedAt)
 	if err != nil {
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("producto no encontrado para actualizar: %w", err)
+		}
+		return nil, fmt.Errorf("error al escanear el producto actualizado: %w", err)
 	}
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return nil, err
-	}
-	if rowsAffected == 0 {
-		return nil, fmt.Errorf("product not found for update")
-	}
-	product.ID = id
-	product.CreatedAt = time.Now()
-	product.UpdatedAt = time.Now()
-	return product, nil
+
+	// Crear un registro en la tabla de historial de productos
+	createProductHistory(&updatedProduct, p)
+
+	return &updatedProduct, nil
 }
 
 func (p *productRepository) DeleteProduct(id int) error {
 	query := `DELETE FROM products WHERE id = $1`
 	_, err := p.db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *productRepository) GetProductHistory(id int, startDate time.Time, endDate time.Time) ([]*Model.ProductHistory, error) {
+	query := `SELECT id, product_id, price, stock, changed_at FROM product_history WHERE product_id = $1 AND changed_at BETWEEN $2 AND $3`
+	rows, err := p.db.Query(query, id, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	history := []*Model.ProductHistory{}
+	for rows.Next() {
+		record := Model.ProductHistory{}
+		if err := rows.Scan(&record.ID, &record.ProductID, &record.Price, &record.Stock, &record.ChangedAt); err != nil {
+			return nil, err
+		}
+		history = append(history, &record)
+	}
+	return history, nil
+}
+
+func createProductHistory(product *Model.Product, p *productRepository) error {
+	query := `INSERT INTO product_history (product_id, price, stock, changed_at) VALUES ($1, $2, $3, $4) RETURNING id`
+	var id int
+	err := p.db.QueryRow(query, product.ID, product.Price, product.Stock, time.Now()).Scan(&id)
 	if err != nil {
 		return err
 	}
