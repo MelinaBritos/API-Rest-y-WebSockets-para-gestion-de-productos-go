@@ -49,7 +49,7 @@ func (p *productRepository) GetProductByID(id int) (*Model.Product, error) {
 	product := Model.Product{}
 	err := row.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Stock, &product.CreatedAt, &product.UpdatedAt)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("producto no encontrado: %w", err)
 	}
 	return &product, nil
 }

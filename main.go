@@ -9,6 +9,7 @@ import (
 
 	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Database"
 	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Handler"
+	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Middleware"
 	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Repository"
 	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Service"
 	_ "github.com/lib/pq"
@@ -28,6 +29,10 @@ func main() {
 	categoryService := Service.NewCategoryService(categoryRepository)
 	categoryHandler := Handler.NewCategoryHandler(categoryService)
 
+	userRepository := Repository.NewUserRepository(db)
+	userService := Service.NewUserService(userRepository)
+	userHandler := Handler.NewUserHandler(userService)
+
 	// Crear router
 	r := mux.NewRouter()
 
@@ -37,20 +42,26 @@ func main() {
 	}
 
 	// Rutas productos
-	r.HandleFunc("/api/products", productHandler.GetProducts).Methods("GET")
-	r.HandleFunc("/api/products/{id}", productHandler.GetProductByID).Methods("GET")
-	r.HandleFunc("/api/products", productHandler.CreateProduct).Methods("POST")
-	r.HandleFunc("/api/products/{id}", productHandler.UpdateProduct).Methods("PUT")
-	r.HandleFunc("/api/products/{id}", productHandler.DeleteProduct).Methods("DELETE")
+	r.HandleFunc("/api/products", Middleware.SetMiddlewareAuthentication(productHandler.GetProducts)).Methods("GET")
+	r.HandleFunc("/api/products/{id}", Middleware.SetMiddlewareAuthentication(productHandler.GetProductByID)).Methods("GET")
+	r.HandleFunc("/api/products", Middleware.SetMiddlewareAuthentication(Middleware.RequireAdmin(productHandler.CreateProduct))).Methods("POST")
+	r.HandleFunc("/api/products/{id}", Middleware.SetMiddlewareAuthentication(Middleware.RequireAdmin(productHandler.UpdateProduct))).Methods("PUT")
+	r.HandleFunc("/api/products/{id}", Middleware.SetMiddlewareAuthentication(Middleware.RequireAdmin(productHandler.DeleteProduct))).Methods("DELETE")
 
 	// Rutas categorías
-	r.HandleFunc("/api/categories", categoryHandler.GetCategories).Methods("GET")
-	r.HandleFunc("/api/categories", categoryHandler.CreateCategory).Methods("POST")
-	r.HandleFunc("/api/categories/{id}", categoryHandler.UpdateCategory).Methods("PUT")
-	r.HandleFunc("/api/categories/{id}", categoryHandler.DeleteCategory).Methods("DELETE")
+	r.HandleFunc("/api/categories", Middleware.SetMiddlewareAuthentication(categoryHandler.GetCategories)).Methods("GET")
+	r.HandleFunc("/api/categories", Middleware.SetMiddlewareAuthentication(Middleware.RequireAdmin(categoryHandler.CreateCategory))).Methods("POST")
+	r.HandleFunc("/api/categories/{id}", Middleware.SetMiddlewareAuthentication(Middleware.RequireAdmin(categoryHandler.UpdateCategory))).Methods("PUT")
+	r.HandleFunc("/api/categories/{id}", Middleware.SetMiddlewareAuthentication(Middleware.RequireAdmin(categoryHandler.DeleteCategory))).Methods("DELETE")
 
 	// Ruta de historial de productos
-	r.HandleFunc("/api/products/{id}/history", productHandler.GetProductHistory).Methods("GET")
+	r.HandleFunc("/api/products/{id}/history", Middleware.SetMiddlewareAuthentication(Middleware.RequireAdmin(productHandler.GetProductHistory))).Methods("GET")
+
+	// Ruta de autenticación
+	r.HandleFunc("/api/login", userHandler.Login).Methods("POST")
+
+	// Ruta web sockets
+	//r.HandleFunc("/api/ws", Handler.WsHandler)
 
 	http.ListenAndServe(":"+port, r)
 }

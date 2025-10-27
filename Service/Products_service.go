@@ -5,14 +5,14 @@ import (
 	"time"
 
 	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Model"
-	repository "github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Repository"
+	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Repository"
 )
 
 type ProductService struct {
-	repo repository.ProductRepository
+	repo Repository.ProductRepository
 }
 
-func NewProductService(repo repository.ProductRepository) *ProductService {
+func NewProductService(repo Repository.ProductRepository) *ProductService {
 	return &ProductService{repo: repo}
 }
 

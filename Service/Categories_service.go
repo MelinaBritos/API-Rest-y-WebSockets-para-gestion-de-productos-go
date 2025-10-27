@@ -4,14 +4,14 @@ import (
 	"errors"
 
 	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Model"
-	repository "github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Repository"
+	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Repository"
 )
 
 type CategoryService struct {
-	repo repository.CategoryRepository
+	repo Repository.CategoryRepository
 }
 
-func NewCategoryService(repo repository.CategoryRepository) *CategoryService {
+func NewCategoryService(repo Repository.CategoryRepository) *CategoryService {
 	return &CategoryService{repo: repo}
 }
 

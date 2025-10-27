@@ -39,7 +39,12 @@ func CrearTablas(db *sql.DB) {
         FOREIGN KEY (product_id)  REFERENCES products (id)  ON DELETE CASCADE, CONSTRAINT fk_category FOREIGN KEY (category_id) REFERENCES categories (id)  ON DELETE CASCADE);
 		
 		CREATE TABLE IF NOT EXISTS Product_History(id SERIAL PRIMARY KEY, product_id INTEGER NOT NULL, price NUMERIC(10, 2) NOT NULL, stock int NOT NULL, changed_at TIMESTAMPTZ, CONSTRAINT fk_product_history
-        FOREIGN KEY (product_id)  REFERENCES products (id) ON DELETE CASCADE);`
+        FOREIGN KEY (product_id)  REFERENCES products (id) ON DELETE CASCADE);
+		
+		CREATE TABLE IF NOT EXISTS Roles(id SERIAL PRIMARY KEY, name VARCHAR(50) UNIQUE NOT NULL);
+
+		CREATE TABLE IF NOT EXISTS Users (id SERIAL PRIMARY KEY, username VARCHAR(50) UNIQUE NOT NULL, email VARCHAR(100) UNIQUE NOT NULL, password VARCHAR(100) NOT NULL, role_id INTEGER NOT NULL, CONSTRAINT fk_user_role FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE CASCADE);
+		`
 
 	_, err := db.Exec(query)
 	if err != nil {

@@ -6,15 +6,15 @@ import (
 	"strconv"
 
 	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Model"
-	service "github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Service"
+	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Service"
 	"github.com/gorilla/mux"
 )
 
 type ProductHandler struct {
-	service *service.ProductService
+	service *Service.ProductService
 }
 
-func NewProductHandler(service *service.ProductService) *ProductHandler {
+func NewProductHandler(service *Service.ProductService) *ProductHandler {
 	return &ProductHandler{service: service}
 }
 
