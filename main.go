@@ -12,6 +12,7 @@ import (
 	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Middleware"
 	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Repository"
 	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Service"
+	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/WebSocket"
 	_ "github.com/lib/pq"
 )
 
@@ -61,7 +62,8 @@ func main() {
 	r.HandleFunc("/api/login", userHandler.Login).Methods("POST")
 
 	// Ruta web sockets
-	//r.HandleFunc("/api/ws", Handler.WsHandler)
+	r.HandleFunc("/api/ws", WebSocket.HandleConnection)
+	WebSocket.Init()
 
 	http.ListenAndServe(":"+port, r)
 }

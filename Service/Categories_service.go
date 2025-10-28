@@ -1,10 +1,12 @@
 package Service
 
 import (
+	"encoding/json"
 	"errors"
 
 	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Model"
 	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Repository"
+	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/WebSocket"
 )
 
 type CategoryService struct {
@@ -26,7 +28,21 @@ func (s *CategoryService) CrearCategoria(category Model.Category) (*Model.Catego
 		return nil, err
 	}
 
-	return s.repo.CreateCategory(&category)
+	newCategory, err := s.repo.CreateCategory(&category)
+	if err != nil {
+		return nil, err
+	}
+
+	// Emitir evento de creación de categoría a través del WebSocket
+	event := map[string]interface{}{
+		"data":   newCategory,
+		"event":  "CATEGORY_CREATED",
+		"action": "Se creó una nueva categoría",
+	}
+	eventJSON, _ := json.Marshal(event)
+	WebSocket.Emit(eventJSON)
+
+	return newCategory, nil
 }
 
 func (s *CategoryService) ActualizarCategoria(id int, category Model.Category) (*Model.Category, error) {
@@ -35,10 +51,31 @@ func (s *CategoryService) ActualizarCategoria(id int, category Model.Category) (
 		return nil, err
 	}
 
-	return s.repo.UpdateCategory(id, &category)
+	updatedCategory, err := s.repo.UpdateCategory(id, &category)
+	if err != nil {
+		return nil, err
+	}
+
+	event := map[string]interface{}{
+		"data":   updatedCategory,
+		"event":  "CATEGORY_UPDATED",
+		"action": "Se actualizó una categoría",
+	}
+	eventJSON, _ := json.Marshal(event)
+	WebSocket.Emit(eventJSON)
+
+	return updatedCategory, nil
 }
 
 func (s *CategoryService) EliminarCategoria(id int) error {
+	event := map[string]interface{}{
+		"event":  "CATEGORY_DELETED",
+		"action": "Se eliminó una categoría",
+		"id":     id,
+	}
+	eventJSON, _ := json.Marshal(event)
+	WebSocket.Emit(eventJSON)
+
 	return s.repo.DeleteCategory(id)
 }
 

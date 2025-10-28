@@ -1,11 +1,13 @@
 package Service
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 
 	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Model"
 	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/Repository"
+	"github.com/MelinaBritos/API-REST-y-WebSockets-para-gestion-de-productos/WebSocket"
 )
 
 type ProductService struct {
@@ -26,12 +28,26 @@ func (s *ProductService) ObtenerProductoPorID(id int) (*Model.Product, error) {
 }
 
 func (s *ProductService) CrearProducto(product Model.Product) (*Model.Product, error) {
-	//validacion al crear producto
+	// Validacion al crear producto
 	if err := validarProducto(product); err != nil {
 		return nil, err
 	}
 
-	return s.repo.CreateProduct(&product)
+	newProduct, err := s.repo.CreateProduct(&product)
+	if err != nil {
+		return nil, err
+	}
+
+	// Emitir evento de creación de producto a través del WebSocket
+	event := map[string]interface{}{
+		"data":   newProduct,
+		"event":  "PRODUCT_CREATED",
+		"action": "Se creó un nuevo producto",
+	}
+	eventJSON, _ := json.Marshal(event)
+	WebSocket.Emit(eventJSON)
+
+	return newProduct, nil
 }
 
 func (s *ProductService) ActualizarProducto(id int, product Model.Product) (*Model.Product, error) {
@@ -40,10 +56,34 @@ func (s *ProductService) ActualizarProducto(id int, product Model.Product) (*Mod
 		return nil, err
 	}
 
-	return s.repo.UpdateProduct(id, &product)
+	updatedProduct, err := s.repo.UpdateProduct(id, &product)
+	if err != nil {
+		return nil, err
+	}
+
+	// Emitir evento de actualización de producto a través del WebSocket
+	event := map[string]interface{}{
+		"data":   updatedProduct,
+		"event":  "PRODUCT_UPDATED",
+		"action": "Se actualizó un producto",
+	}
+	eventJSON, _ := json.Marshal(event)
+	WebSocket.Emit(eventJSON)
+
+	return updatedProduct, nil
 }
 
 func (s *ProductService) EliminarProducto(id int) error {
+
+	// Emitir evento de eliminación de producto a través del WebSocket
+	event := map[string]interface{}{
+		"event":  "PRODUCT_DELETED",
+		"action": "Se eliminó un producto",
+		"id":     id,
+	}
+	eventJSON, _ := json.Marshal(event)
+	WebSocket.Emit(eventJSON)
+
 	return s.repo.DeleteProduct(id)
 }
 
