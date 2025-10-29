@@ -50,6 +50,29 @@ func (s *ProductService) CrearProducto(product Model.Product) (*Model.Product, e
 	return newProduct, nil
 }
 
+func (s *ProductService) CrearProductos(products []Model.Product) ([]*Model.Product, error) {
+	var newProducts []*Model.Product
+	for _, product := range products {
+		if err := validarProducto(product); err != nil {
+			return nil, err
+		}
+		newProduct, err := s.repo.CreateProduct(&product)
+		if err != nil {
+			return nil, err
+		}
+		event := map[string]interface{}{
+			"data":   newProduct,
+			"event":  "PRODUCT_CREATED",
+			"action": "Se creó un nuevo producto",
+		}
+		eventJSON, _ := json.Marshal(event)
+		WebSocket.Emit(eventJSON)
+
+		newProducts = append(newProducts, newProduct)
+	}
+	return newProducts, nil
+}
+
 func (s *ProductService) ActualizarProducto(id int, product Model.Product) (*Model.Product, error) {
 	//validacion al actualizar producto
 	if err := validarProducto(product); err != nil {

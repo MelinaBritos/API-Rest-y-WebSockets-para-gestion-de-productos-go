@@ -67,6 +67,24 @@ func (p *ProductHandler) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(created)
 }
 
+func (p *ProductHandler) CreateProducts(w http.ResponseWriter, r *http.Request) {
+	var products []Model.Product
+	if err := json.NewDecoder(r.Body).Decode(&products); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	createdProducts, err := p.service.CrearProductos(products)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(createdProducts)
+}
+
 func (p *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])

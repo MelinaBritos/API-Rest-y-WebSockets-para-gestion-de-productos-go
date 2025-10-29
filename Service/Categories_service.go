@@ -45,6 +45,33 @@ func (s *CategoryService) CrearCategoria(category Model.Category) (*Model.Catego
 	return newCategory, nil
 }
 
+func (s *CategoryService) CrearCategorias(categories []Model.Category) ([]*Model.Category, error) {
+	var createdCategories []*Model.Category
+	for _, category := range categories {
+		//validacion al crear categoria
+		if err := validarCategoria(category); err != nil {
+			return nil, err
+		}
+
+		newCategory, err := s.repo.CreateCategory(&category)
+		if err != nil {
+			return nil, err
+		}
+
+		// Emitir evento de creación de categoría a través del WebSocket
+		event := map[string]interface{}{
+			"data":   newCategory,
+			"event":  "CATEGORY_CREATED",
+			"action": "Se creó una nueva categoría",
+		}
+		eventJSON, _ := json.Marshal(event)
+		WebSocket.Emit(eventJSON)
+
+		createdCategories = append(createdCategories, newCategory)
+	}
+	return createdCategories, nil
+}
+
 func (s *CategoryService) ActualizarCategoria(id int, category Model.Category) (*Model.Category, error) {
 	//validacion al actualizar categoria
 	if err := validarCategoria(category); err != nil {

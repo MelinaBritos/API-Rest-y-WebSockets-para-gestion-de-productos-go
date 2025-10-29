@@ -48,6 +48,24 @@ func (c *CategoryHandler) CreateCategory(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(created)
 }
 
+func (c *CategoryHandler) CreateCategories(w http.ResponseWriter, r *http.Request) {
+	var categories []Model.Category
+	if err := json.NewDecoder(r.Body).Decode(&categories); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	createdCategories, err := c.service.CrearCategorias(categories)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(createdCategories)
+}
+
 func (c *CategoryHandler) UpdateCategory(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
